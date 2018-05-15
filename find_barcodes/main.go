@@ -52,8 +52,8 @@ func main() {
 
   primer_seqs := make([]*linear.Seq, 0)
 
-  barcode_start := 7
-  barcode_end := 13
+  barcode_start := 4
+  barcode_end := 20
 
   // Open the output file for writing:
   fho, err := os.Create(os.Args[3])
@@ -70,16 +70,25 @@ func main() {
 	primer_seqs = append(primer_seqs, seq)
   }
 
+
+  // Create a fasta writer with width 80:
+  //writer := fastq.NewWriter(fho)
+
+  //var i uint64 = 0
+  var readID string
+
+
   for read_scanner.Next(){
 	read := read_scanner.Seq().(*linear.QSeq)
 	annotation := read.CloneAnnotation()
+	readID = annotation.ID
 
 	for i := range(primer_seqs) {
 	  primer := primer_seqs[i]
 	  for j := barcode_start ; j < barcode_end ; j++ {
 		distance := Hamming(primer, read, j)
 		if distance <= 1 {
-		  fmt.Println("Hamming distance for", annotation.ID, primer.Seq, ":", distance)
+		  fmt.Println("Hamming distance for", annotation.ID, "+", primer.Seq, ":", distance)
 		  //  barcode := read.Seq[0:(j-1)].L
 		//  addition := strings.Join("BARCODE:"
 		//  // Something like this
@@ -93,23 +102,10 @@ func main() {
 
   }
 
-
-
-
-
-
-
-  // Create a fasta writer with width 80:
-  //writer := fastq.NewWriter(fho)
-
-  //var i uint64 = 0
-  var sequence_description string
-
-
   err = read_scanner.Error()
   // handle errors
   if err != nil {
-    fmt.Println("last sequence:", sequence_description)
+    fmt.Println("last read before error:", readID)
 	panic(err)
   }
 
