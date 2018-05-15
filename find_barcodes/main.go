@@ -8,7 +8,6 @@ import (
   "fmt"
   "github.com/biogo/biogo/io/seqio/fasta"
   "github.com/biogo/biogo/io/seqio/fastq"
-  "strings"
 )
 
 // Hamming computes the hamming distance between the primer string and the read
@@ -53,36 +52,8 @@ func main() {
 
   primer_seqs := make([]*linear.Seq, 0)
 
-  barcode_start := 4
-  barcode_end := 20
-
-  for primer_scanner.Next(){
-    seq := primer_scanner.Seq().(*linear.Seq)
-	primer_seqs = append(primer_seqs, seq)
-  }
-
-  for read_scanner.Next(){
-	seq := read_scanner.Seq().(*linear.QSeq)
-	annotation := seq.CloneAnnotation()
-
-	for i := range(primer_seqs) {
-	  primer := primer_seqs[i]
-	  for j := barcode_start ; j < barcode_end ; j++ {
-		distance := Hamming(primer, seq, j)
-		fmt.Println("Hamming distance for ", annotation.ID, annotation.Description(), ":", distance)
-		if distance <= 1 {
-		  // Something like this
-		  id_parts := []string{annotation.ID, replaced}
-		  new_id := strings.Join(id_parts, " ")
-		  seq_replaced := linear.NewQSeq(new_id, seq.Seq, seq.Alphabet(), seq.Encode)
-
-		}
-	  }
-	}
-
-  }
-
-
+  barcode_start := 7
+  barcode_end := 13
 
   // Open the output file for writing:
   fho, err := os.Create(os.Args[3])
@@ -91,6 +62,39 @@ func main() {
   if err != nil {
 	panic(err)
   }
+  // Create a fastq writer for the new sequences
+  //writer := fastq.NewWriter(fho)
+
+  for primer_scanner.Next(){
+    seq := primer_scanner.Seq().(*linear.Seq)
+	primer_seqs = append(primer_seqs, seq)
+  }
+
+  for read_scanner.Next(){
+	read := read_scanner.Seq().(*linear.QSeq)
+	annotation := read.CloneAnnotation()
+
+	for i := range(primer_seqs) {
+	  primer := primer_seqs[i]
+	  for j := barcode_start ; j < barcode_end ; j++ {
+		distance := Hamming(primer, read, j)
+		if distance <= 1 {
+		  fmt.Println("Hamming distance for", annotation.ID, primer.Seq, ":", distance)
+		  //  barcode := read.Seq[0:(j-1)].L
+		//  addition := strings.Join("BARCODE:"
+		//  // Something like this
+		//  id_parts := []string{annotation.ID, replaced}
+		//  new_id := strings.Join(id_parts, " ")
+		//  seq_replaced := linear.NewQSeq(new_id, read.Seq, read.Alphabet(), read.Encode)
+		//  writer.Write(seq_replaced)
+		}
+	  }
+	}
+
+  }
+
+
+
 
 
 
